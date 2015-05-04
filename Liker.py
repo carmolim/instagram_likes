@@ -125,7 +125,7 @@ class Liker:
 
 			else:
 				print ''
-				print 'Essa foto já foi curtida, ou foi postada por mim ou não tem mais nenhuma tag para ser comparada'
+				print "This media have already been liked, or was posted for me, or doesn't have more than 1 tag to bem compared"
 
 			media_processed += 1		
 			
@@ -142,7 +142,8 @@ class Liker:
 
 			media_processed = 0
 			media_liked		= 0
-
+			
+			print ''
 			print 'Running config from %s' % config.get_config_user().get_client_user()
 			print ''
 
