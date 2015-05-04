@@ -8,7 +8,7 @@ print ''
 # INSTAGRAM USER INFORMATION
 
 client_user 	= 'your client_user'
-client_id 		= 'your client id'
+client_id		= 'your client id'
 access_token 	= 'your access_token'
 client_secret 	= 'your client_secret'
 
