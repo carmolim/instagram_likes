@@ -13,7 +13,7 @@ class Liker:
 
 		print 'Liker object created'
 
-
+	# Like a media based in the media ID	
 	def like_media ( self, config, media_id ):
 
 		api = config.get_api()
@@ -22,111 +22,123 @@ class Liker:
 
 		seconds = random.randint( self.min_interval, self.max_interval ) # sorteia o tempo para a proxima acao
 		print 'Wait %s seconds until next like' % seconds
-		print " " 
-		time.sleep( seconds ) # TODO: agora ele acha uma para dar like, da o like e espera e procura a proxima, trocar para procura para dar o like, da o like, acha a proxima para dar o like e dai espera
 
+		# Waits random time
+		time.sleep( seconds )
 
-
-
+	#
 	def results_verifications ( self, config, results, media_processed, media_liked ) :
 
+		# print results
 		# run through all the results
 		for result in results:
 
-			# tags from the current media
-			media_id 			= result.id
-			media_tags 			= result.tags
-			media_user 			= result.user.username
-			media_link			= result.link
-			has_ignored_user 	= False
-			has_ignored_tag 	= False
-			has_related_tag		= False
+			#  checks if this result has tags
+			if hasattr( result , 'tags' ):			
+				
+				# print getattr(result, 'tags', [])
 
-			
-			print 'user: ' + media_user
-			# print 'id: '   + str( media_id )
-			print 'link: ' + media_link
-			# print media_tags
+				# tags from the current media
+				media_id 			= result.id
+				media_tags 			= result.tags
+				media_user 			= result.user.username
+				media_link			= result.link
+				has_ignored_user 	= False
+				has_ignored_tag 	= False
+				has_related_tag		= False
 
-			# se ainda nao dei like nessa foto e nao foi postada por mim e tiver se tiver alguma tagRelacionada para verificar
-			if media_user is not config.get_config_user().get_client_user() and result.user_has_liked is False and len( media_tags ) > 1 :
+				print ''
+				
+				print 'user: ' + media_user
+				# print 'id: '   + str( media_id )
+				print 'link: ' + media_link
+				# print media_tags
 
-				# if the config has a list of ignored users
-				if config.get_ignored_users() is not None :
-					print 'Starting ignored user verification'
+				#TODO: translate se ainda nao dei like nessa foto e nao foi postada por mim e tiver se tiver alguma tagRelacionada para verificar
+				if media_user is not config.get_config_user().get_client_user() and result.user_has_liked is False and len( media_tags ) > 1 :
 
-					# run through all excluded users listed in the config
-					for ignored_user in config.get_ignored_users():
+					# if the config has a list of ignored users
+					if config.get_ignored_users() is not None :
+						print 'Starting ignored user verification'
 
-						# if this media was posted by some excluded user
-						if media_user == ignored_user:
+						# run through all excluded users listed in the config
+						for ignored_user in config.get_ignored_users():
 
-							# has_ignored_user is set to true
-							has_ignored_user = True
-							print 'This media has an ignored user'
-							print ''
+							# if this media was posted by some excluded user
+							if media_user == ignored_user:
 
-					if has_ignored_user is False:
-						print ' - No ignored user found'
+								# has_ignored_user is set to true
+								has_ignored_user = True
+								print 'This media has an ignored user'
+								print ''
+
+						if has_ignored_user is False:
+							print ' - No ignored user found'
 
 
-				# if this media wasn't posted by an excluded user and the config has a list of ignored tags
-				if has_ignored_user is False and config.get_ignored_tags() is not None :
+					# if this media wasn't posted by an excluded user and the config has a list of ignored tags
+					if has_ignored_user is False and config.get_ignored_tags() is not None :
 
-					print 'Starting ignored tags verification'
-
-					# run through all tags from this media
-					for tag in media_tags :
-
-						# run through all related tags from this config
-						for ignored_tag in config.get_ignored_tags():
-
-							# if the current tag is listed in the ignored tags
-							if tag == ignored_tag:
-
-								# has_ignored_tag is set to true
-								has_ignored_tag = True
-
-								print 'This media has the %s excluded tag' % ignored_tag
-
-					if has_ignored_tag is False:
-						print ' - No ignored tag found'
-
-				# if this media has not a excluded user and if this media has not a excluded user and the config has a list of related tags
-				if has_ignored_user is False and has_ignored_tag is False and config.get_related_tags() is not None :
-
-					print 'Starting related tags verification'
-
-					# print  config.get_related_tags()
-
-					# run through all tags from this media
-					for tag in media_tags :
+						print 'Starting ignored tags verification'
 
 						# run through all tags from this media
-						for related_tag in config.get_related_tags():
+						for tag in media_tags :
 
-							# if the current tag is listed in the related tags
-							if tag.name == related_tag :
-							
-								has_related_tag = True
+							# run through all related tags from this config
+							for ignored_tag in config.get_ignored_tags():
 
-								print ' - This media has the "%s" related tag' % related_tag 
-								# like this media
-					
-					if has_related_tag is True:
+								# if the current tag is listed in the ignored tags
+								if tag.name == ignored_tag:
 
-						self.like_media( config, media_id )
-						media_liked += 1
+									# has_ignored_tag is set to true
+									has_ignored_tag = True
+
+									print 'This media has the %s excluded tag' % ignored_tag
+
+						if has_ignored_tag is False:
+							print ' - No ignored tag found'
+
+					# if this media has not a excluded user and if this media has not a excluded user and the config has a list of related tags
+					if has_ignored_user is False and has_ignored_tag is False and config.get_related_tags() is not None :
+
+						print 'Starting related tags verification'
+
+						# print  config.get_related_tags()
+
+						# run through all tags from this media
+						for tag in media_tags :
+
+							# run through all tags from this media
+							for related_tag in config.get_related_tags():
+
+								# if the current tag is listed in the related tags
+								if tag.name == related_tag :
+								
+									has_related_tag = True
+
+									print ' - This media has the "%s" related tag' % related_tag 
+									# break with this break things are supossed to go faster, but I think that wont be noticeble
+
+						
+						if has_related_tag is True:
+
+							self.like_media( config, media_id )
+							media_liked += 1
 
 
-					if has_related_tag is not True:
-						print ' - No related tag found'
+						if has_related_tag is not True:
+							print ' - No related tag found'
+
+
+				else:
+					print "This media have already been liked, or was posted for me, or doesn't have more than 1 tag to bem compared"
+
 
 
 			else:
-				print ''
-				print "This media have already been liked, or was posted for me, or doesn't have more than 1 tag to bem compared"
+				print "This media doesn't have any tags"
 
+		
 			media_processed += 1		
 			
 			return media_processed, media_liked
@@ -162,23 +174,25 @@ class Liker:
 					media_processed, media_liked = self.results_verifications( config = config, results = results, media_processed = media_processed, media_liked = media_liked )
 					print 'Media processed: ' + str( media_processed )		
 					print 'Media liked: ' + str( media_liked )	
-					print''	
+					print ''	
 
-
-					while next:
+					while next and  media_processed < config.get_max_iterations():
 
 						results, next = api.tag_recent_media( tag_name = search_tag, with_next_url = next )
 						media_processed, media_liked  = self.results_verifications( config = config, results = results, media_processed = media_processed, media_liked = media_liked  )
 						print 'Media processed: ' + str( media_processed )		
 						print 'Media liked: ' + str( media_liked )	
-						print''	
-
+						
+						print ''
+						print "Remaining API Calls = %s/%s" % ( api.x_ratelimit_remaining, api.x_ratelimit )
+						print ''
 
 				except Exception as e:
 					print ( e )
-			print ''
-			print "Remaining API Calls = %s/%s" % ( api.x_ratelimit_remaining, api.x_ratelimit )
-			print ''
+		
+		while True:
+
+			self.make_likes()
 
 
 
