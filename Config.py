@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 from instagram import client
 from instagram.client import InstagramAPI
+from SearchTag import SearchTag
 
 
 class Config:
 
 	def __init__( self, search_tags, related_tags, ignored_tags, ignored_users, config_user, max_iterations ):
 
-		self.search_tags 			= search_tags
+		#TODO: how deep in old search it should go
+
+		self.search_tags 			= []
 		self.related_tags 			= None
 		self.ignored_users 			= None
 		self.ignored_tags 			= None
 		self.config_user 			= config_user
 		self.max_iterations			= max_iterations
 		self.api 					= None
-		
 
 		if related_tags is not None:
 			self.related_tags = related_tags
@@ -24,6 +26,13 @@ class Config:
 
 		if ignored_users is not None:
 		 	self.ignored_users = ignored_users
+
+
+		for search_tag in search_tags:
+
+			temp_tag = SearchTag( search_tag )
+
+			self.search_tags.append( temp_tag )
 
 		try:
 			self.api = client.InstagramAPI( access_token = self.config_user.get_access_token(), client_secret = self.config_user.get_client_secret() )
