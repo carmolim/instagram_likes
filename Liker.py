@@ -13,6 +13,21 @@ class Liker:
 
 		print 'Liker object created'
 
+	def str_to_boolean( self, s ):
+
+		s = str( s )
+
+		if s == 'True':
+			# print 'True'
+			return True
+
+		elif s == 'False':
+			# print 'False'
+			return False
+
+		else:
+			raise ValueError # evil ValueError that doesn't tell you what the wrong value was
+
 	# Like a media based in the media ID	
 	def like_media ( self, config, media_id ):
 
@@ -34,9 +49,6 @@ class Liker:
 		# run through all the results
 		for result in results:
 
-			# print result
-			# pq não está roldando 20x???? por causa do return que estava no lugar errado
-
 			#  checks if this result has tags
 			if hasattr( result , 'tags' ):			
 				
@@ -45,8 +57,11 @@ class Liker:
 				# tags from the current media
 				media_id 			= result.id
 				media_tags 			= result.tags
-				media_user 			= result.user.username
+				media_user 			= str(result.user.username)
 				media_link			= result.link
+
+				is_from_client		= False
+				has_liked 			= self.str_to_boolean( result.user_has_liked )
 				has_ignored_user 	= False
 				has_ignored_tag 	= False
 				has_related_tag		= False
@@ -54,12 +69,25 @@ class Liker:
 				print ''
 				print 'tag: '  + search_tag.get_tag_name()
 				print 'user: ' + media_user
+				# print 'liked: ' + str( has_liked )
 				# print 'id: '   + str( media_id )
 				print 'link: ' + media_link
 				# print media_tags
 
+				#TODO: try to find the related tags in the media description
+
 				#TODO: translate se ainda nao dei like nessa foto e nao foi postada por mim e tiver se tiver alguma tagRelacionada para verificar
-				if media_user is not config.get_config_user().get_client_user() and result.user_has_liked is False and len( media_tags ) > 1 :
+				# failed verification of the user... make some tests
+				
+				if media_user == config.get_config_user().get_client_user():
+					# print 'is from client'
+					is_from_client = True
+
+				else: 
+					# print 'isnt from client'
+					is_from_client = False
+
+				if is_from_client is False and has_liked is False and len( media_tags ) > 1 :
 
 					# if the config has a list of ignored users
 					if config.get_ignored_users() is not None :
@@ -78,7 +106,7 @@ class Liker:
 
 						if has_ignored_user is False:
 							print ' - No ignored user found'
-
+							
 
 					# if this media wasn't posted by an excluded user and the config has a list of ignored tags
 					if has_ignored_user is False and config.get_ignored_tags() is not None :
@@ -122,7 +150,6 @@ class Liker:
 
 									print ' - This media has the "%s" related tag' % related_tag 
 									# break with this break things are supossed to go faster, but I think that wont be noticeble
-
 						
 						if has_related_tag is True:
 
@@ -132,6 +159,12 @@ class Liker:
 
 						if has_related_tag is not True:
 							print ' - No related tag found'
+
+					# if no related tag is defined, like all the media that has the current SearchTag and pass all other verifications
+					elif has_ignored_user is False and has_ignored_tag is False:
+
+						self.like_media( config, media_id )
+						media_liked += 1
 
 				else:
 					print "This media have already been liked, or was posted for me, or doesn't have more than 1 tag to bem compared"
@@ -172,42 +205,57 @@ class Liker:
 
 				print ''
 				print 'Searching for tag: %s ' % search_tag.get_tag_name()
-				print '===================================================================================================================================================='
+				print '========================================================================================================='
 				print ''
 
 				#  try to request media with the current tag
 				try:
+
+					next_page = ''
+
 
 					if search_tag.get_search_older() is True :
 
 						print 'Searching for older results'
 						print ''
 
-						results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url_url = search_tag.get_next_page() )
+						results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = search_tag.get_next_page() )
 						media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )				
 					
-					else :
+					else : 
 						results, next_page = api.tag_recent_media( count = 20, max_tag_id = '', tag_name = search_tag.get_tag_name() )
 						media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )	
 
 
 					while next_page and media_processed < config.get_max_iterations() :
 
-						# print next_page
+						if search_tag.get_search_older() is True :
 
-						results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url_url = next_page )
-						media_processed, media_liked  = self.results_verifications( search_tag = search_tag, config = config, results = results, media_processed = media_processed, media_liked = media_liked )
+							results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = search_tag.get_next_page() )
+							media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )				
+
+						else:
+							results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = next_page )
+							media_processed, media_liked  = self.results_verifications( search_tag = search_tag, config = config, results = results, media_processed = media_processed, media_liked = media_liked )
 						
 						# print results
 						print ''
 						print "Remaining API Calls = %s/%s" % ( api.x_ratelimit_remaining, api.x_ratelimit )
 						print ''
 
+						
+
+
 						search_tag.next_page = next_page
+
+						print search_tag.next_page
 
 							
 						if media_liked == 0 :
 							search_tag.search_older = True
+							print ''
+							print 'Searching for older tags next time'
+							print ''
 
 						else :
 							search_tag.search_older = False
