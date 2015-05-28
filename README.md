@@ -2,10 +2,14 @@
 Python scripts that likes posts based in a tag, related tags, you can also skip likes using a list of ignored tags and ignored users.
 
 
-1 - install pip
+Step 1
+
+If you don't have pip intalled execute this line in terminal:
 
 sudo easy_install pip
 
-2 - install intagram-python
+Step 2 
 
-pip install python-instagram
+Install the python instagram library 
+
+sudo pip install python-instagram
