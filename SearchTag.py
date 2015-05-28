@@ -30,6 +30,8 @@ class SearchTag:
 		self.processed = n
 
 
+
+
 	def get_tag_name ( self ):
 		return self.search_tag
 
@@ -45,6 +47,9 @@ class SearchTag:
 	def get_processed ( self ):
 		return self.processed
 
+
+	def processed(self):
+		self.processed = self.processed + 1
 
 
 

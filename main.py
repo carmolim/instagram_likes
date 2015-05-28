@@ -20,6 +20,9 @@ search_tags = [ u'cat' ]
 # If in other to the media be liked has to have another tag, list the possiblilities her
 related_tags = [ u'blackcat', u'love', u'kitty' ]
 
+# If in other to the media be liked has to have another tag, list the possiblilities her
+ignored_tags = [ u'pussy', ]
+
 # Media from those users won't be liked
 ignored_users 	= [ u'emmadalla', u'feldsy' ]
 

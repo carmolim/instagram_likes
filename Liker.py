@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 import random
+from SearchTag import SearchTag
 
 class Liker:
 	
@@ -57,7 +58,7 @@ class Liker:
 				# tags from the current media
 				media_id 			= result.id
 				media_tags 			= result.tags
-				media_user 			= str(result.user.username)
+				media_user 			= str( result.user.username )
 				media_link			= result.link
 
 				is_from_client		= False
@@ -68,6 +69,7 @@ class Liker:
 
 				print ''
 				print 'tag: '  + search_tag.get_tag_name()
+				print  media_tags
 				print 'user: ' + media_user
 				# print 'liked: ' + str( has_liked )
 				# print 'id: '   + str( media_id )
@@ -154,7 +156,8 @@ class Liker:
 						if has_related_tag is True:
 
 							self.like_media( config, media_id )
-							media_liked += 1
+							search_tag.likes = search_tag.likes + 1 
+							# media_liked += 1
 
 
 						if has_related_tag is not True:
@@ -164,7 +167,9 @@ class Liker:
 					elif has_ignored_user is False and has_ignored_tag is False:
 
 						self.like_media( config, media_id )
-						media_liked += 1
+
+						search_tag.likes = search_tag.likes + 1
+						# media_liked += 1
 
 				else:
 					print "This media have already been liked, or was posted for me, or doesn't have more than 1 tag to bem compared"
@@ -172,11 +177,15 @@ class Liker:
 			else:
 				print "This media doesn't have any tags"
 
-		
+			search_tag.processed = search_tag.processed + 1
 			media_processed += 1
 
-			print 'Media processed: ' + str( media_processed )		
-			print 'Media liked: ' + str( media_liked )	
+			# print 'Media processed: ' + str( media_processed )		
+			print 'Media processed: ' + str( search_tag.processed )	
+
+			# print 'Media liked: ' + str( media_liked )	
+			print 'Media liked: ' + str( search_tag.likes )	
+
 			print ''
 
 			
@@ -209,61 +218,61 @@ class Liker:
 				print ''
 
 				#  try to request media with the current tag
-				try:
+				# try:
 
-					next_page = ''
+				next_page = ''
 
+
+				if search_tag.get_search_older() is True :
+
+					print 'Searching for older results'
+					print ''
+
+					results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = search_tag.get_next_page() )
+					media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )				
+				
+				else : 
+					results, next_page = api.tag_recent_media( count = 20, max_tag_id = '', tag_name = search_tag.get_tag_name() )
+					media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )	
+
+
+				while next_page and media_processed < config.get_max_iterations() :
 
 					if search_tag.get_search_older() is True :
 
-						print 'Searching for older results'
-						print ''
-
 						results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = search_tag.get_next_page() )
 						media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )				
+
+					else:
+						results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = next_page )
+						media_processed, media_liked  = self.results_verifications( search_tag = search_tag, config = config, results = results, media_processed = media_processed, media_liked = media_liked )
 					
-					else : 
-						results, next_page = api.tag_recent_media( count = 20, max_tag_id = '', tag_name = search_tag.get_tag_name() )
-						media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )	
+					# print results
+					print ''
+					print "Remaining API Calls = %s/%s" % ( api.x_ratelimit_remaining, api.x_ratelimit )
+					print ''
+
+					
 
 
-					while next_page and media_processed < config.get_max_iterations() :
+					search_tag.next_page = next_page
 
-						if search_tag.get_search_older() is True :
-
-							results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = search_tag.get_next_page() )
-							media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )				
-
-						else:
-							results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = next_page )
-							media_processed, media_liked  = self.results_verifications( search_tag = search_tag, config = config, results = results, media_processed = media_processed, media_liked = media_liked )
-						
-						# print results
-						print ''
-						print "Remaining API Calls = %s/%s" % ( api.x_ratelimit_remaining, api.x_ratelimit )
-						print ''
+					print search_tag.next_page
 
 						
+					if media_liked == 0 :
+						search_tag.search_older = True
+						print ''
+						print 'Searching for older tags next time'
+						print ''
 
-
-						search_tag.next_page = next_page
-
-						print search_tag.next_page
-
-							
-						if media_liked == 0 :
-							search_tag.search_older = True
-							print ''
-							print 'Searching for older tags next time'
-							print ''
-
-						else :
-							search_tag.search_older = False
+					else :
+						search_tag.search_older = False
 
 
 
-				except Exception as e:
-					print ( e )
+				# except Exception as e:
+				# 	print ( e )
 		
 		while True:
 			# TODO: salvar o último next_url de cada config para iniciar a próxima interação da última parada, mas isso só pode rolar se...
