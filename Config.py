@@ -27,7 +27,6 @@ class Config:
 		if ignored_users is not None:
 		 	self.ignored_users = ignored_users
 
-
 		for search_tag in search_tags:
 
 			temp_tag = SearchTag( search_tag )
