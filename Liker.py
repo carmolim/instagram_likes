@@ -13,123 +13,174 @@ class Liker:
 
 		print 'Liker object created'
 
+	def str_to_boolean( self, s ):
 
+		s = str( s )
+
+		if s == 'True':
+			# print 'True'
+			return True
+
+		elif s == 'False':
+			# print 'False'
+			return False
+
+		else:
+			raise ValueError # evil ValueError that doesn't tell you what the wrong value was
+
+	# Like a media based in the media ID	
 	def like_media ( self, config, media_id ):
 
-		api = config.get_api()
-
+		api = config.get_api() 
 		api.like_media( media_id = media_id )
 
 		seconds = random.randint( self.min_interval, self.max_interval ) # sorteia o tempo para a proxima acao
+
+		# seconds = random.randint( 1, 2 ) # sorteia o tempo para a proxima acao
 		print 'Wait %s seconds until next like' % seconds
-		print " " 
-		time.sleep( seconds ) # TODO: agora ele acha uma para dar like, da o like e espera e procura a proxima, trocar para procura para dar o like, da o like, acha a proxima para dar o like e dai espera
 
+		# Waits random time
+		time.sleep( seconds )
 
-
-
-	def results_verifications ( self, config, results, media_processed, media_liked ) :
-
+	#
+	def results_verifications ( self, search_tag, config, results, media_processed, media_liked ) :
+	
+		# print results
 		# run through all the results
 		for result in results:
 
-			# tags from the current media
-			media_id 			= result.id
-			media_tags 			= result.tags
-			media_user 			= result.user.username
-			media_link			= result.link
-			has_ignored_user 	= False
-			has_ignored_tag 	= False
-			has_related_tag		= False
+			#  checks if this result has tags
+			if hasattr( result , 'tags' ):			
+				
+				# print getattr(result, 'tags', [])
 
-			
-			print 'user: ' + media_user
-			# print 'id: '   + str( media_id )
-			print 'link: ' + media_link
-			# print media_tags
+				# tags from the current media
+				media_id 			= result.id
+				media_tags 			= result.tags
+				media_user 			= str(result.user.username)
+				media_link			= result.link
 
-			# se ainda nao dei like nessa foto e nao foi postada por mim e tiver se tiver alguma tagRelacionada para verificar
-			if media_user is not config.get_config_user().get_client_user() and result.user_has_liked is False and len( media_tags ) > 1 :
+				is_from_client		= False
+				has_liked 			= self.str_to_boolean( result.user_has_liked )
+				has_ignored_user 	= False
+				has_ignored_tag 	= False
+				has_related_tag		= False
 
-				# if the config has a list of ignored users
-				if config.get_ignored_users() is not None :
-					print 'Starting ignored user verification'
+				print ''
+				print 'tag: '  + search_tag.get_tag_name()
+				print 'user: ' + media_user
+				# print 'liked: ' + str( has_liked )
+				# print 'id: '   + str( media_id )
+				print 'link: ' + media_link
+				# print media_tags
 
-					# run through all excluded users listed in the config
-					for ignored_user in config.get_ignored_users():
+				#TODO: try to find the related tags in the media description
 
-						# if this media was posted by some excluded user
-						if media_user == ignored_user:
+				#TODO: translate se ainda nao dei like nessa foto e nao foi postada por mim e tiver se tiver alguma tagRelacionada para verificar
+				# failed verification of the user... make some tests
+				
+				if media_user == config.get_config_user().get_client_user():
+					# print 'is from client'
+					is_from_client = True
 
-							# has_ignored_user is set to true
-							has_ignored_user = True
-							print 'This media has an ignored user'
-							print ''
+				else: 
+					# print 'isnt from client'
+					is_from_client = False
 
-					if has_ignored_user is False:
-						print ' - No ignored user found'
+				if is_from_client is False and has_liked is False and len( media_tags ) > 1 :
 
+					# if the config has a list of ignored users
+					if config.get_ignored_users() is not None :
+						print 'Starting ignored user verification'
 
-				# if this media wasn't posted by an excluded user and the config has a list of ignored tags
-				if has_ignored_user is False and config.get_ignored_tags() is not None :
+						# run through all excluded users listed in the config
+						for ignored_user in config.get_ignored_users():
 
-					print 'Starting ignored tags verification'
+							# if this media was posted by some excluded user
+							if media_user == ignored_user:
 
-					# run through all tags from this media
-					for tag in media_tags :
+								# has_ignored_user is set to true
+								has_ignored_user = True
+								print 'This media has an ignored user'
+								print ''
 
-						# run through all related tags from this config
-						for ignored_tag in config.get_ignored_tags():
+						if has_ignored_user is False:
+							print ' - No ignored user found'
+							
 
-							# if the current tag is listed in the ignored tags
-							if tag == ignored_tag:
+					# if this media wasn't posted by an excluded user and the config has a list of ignored tags
+					if has_ignored_user is False and config.get_ignored_tags() is not None :
 
-								# has_ignored_tag is set to true
-								has_ignored_tag = True
-
-								print 'This media has the %s excluded tag' % ignored_tag
-
-					if has_ignored_tag is False:
-						print ' - No ignored tag found'
-
-				# if this media has not a excluded user and if this media has not a excluded user and the config has a list of related tags
-				if has_ignored_user is False and has_ignored_tag is False and config.get_related_tags() is not None :
-
-					print 'Starting related tags verification'
-
-					# print  config.get_related_tags()
-
-					# run through all tags from this media
-					for tag in media_tags :
+						print 'Starting ignored tags verification'
 
 						# run through all tags from this media
-						for related_tag in config.get_related_tags():
+						for tag in media_tags :
 
-							# if the current tag is listed in the related tags
-							if tag.name == related_tag :
-							
-								has_related_tag = True
+							# run through all related tags from this config
+							for ignored_tag in config.get_ignored_tags():
 
-								print ' - This media has the "%s" related tag' % related_tag 
-								# like this media
-					
-					if has_related_tag is True:
+								# if the current tag is listed in the ignored tags
+								if tag.name == ignored_tag:
+
+									# has_ignored_tag is set to true
+									has_ignored_tag = True
+
+									print ' - This media has the %s excluded tag' % ignored_tag
+
+						if has_ignored_tag is False:
+							print ' - No ignored tag found'
+
+					# if this media has not a excluded user and if this media has not a excluded user and the config has a list of related tags
+					if has_ignored_user is False and has_ignored_tag is False and config.get_related_tags() is not None :
+
+						print 'Starting related tags verification'
+
+						# print  config.get_related_tags()
+
+						# run through all tags from this media
+						for tag in media_tags :
+
+							# run through all tags from this media
+							for related_tag in config.get_related_tags():
+
+								# if the current tag is listed in the related tags
+								if tag.name == related_tag :
+								
+									has_related_tag = True
+
+									print ' - This media has the "%s" related tag' % related_tag 
+									# break with this break things are supossed to go faster, but I think that wont be noticeble
+						
+						if has_related_tag is True:
+
+							self.like_media( config, media_id )
+							media_liked += 1
+
+
+						if has_related_tag is not True:
+							print ' - No related tag found'
+
+					# if no related tag is defined, like all the media that has the current SearchTag and pass all other verifications
+					elif has_ignored_user is False and has_ignored_tag is False:
 
 						self.like_media( config, media_id )
 						media_liked += 1
 
-
-					if has_related_tag is not True:
-						print ' - No related tag found'
-
+				else:
+					print "This media have already been liked, or was posted for me, or doesn't have more than 1 tag to bem compared"
 
 			else:
-				print ''
-				print "This media have already been liked, or was posted for me, or doesn't have more than 1 tag to bem compared"
+				print "This media doesn't have any tags"
 
-			media_processed += 1		
+		
+			media_processed += 1
+
+			print 'Media processed: ' + str( media_processed )		
+			print 'Media liked: ' + str( media_liked )	
+			print ''
+
 			
-			return media_processed, media_liked
+		return media_processed, media_liked
 
 
 
@@ -139,9 +190,6 @@ class Liker:
 
 		# run through all configs
 		for config in self.configs:
-
-			media_processed = 0
-			media_liked		= 0
 			
 			print ''
 			print 'Running config from %s' % config.get_config_user().get_client_user()
@@ -151,34 +199,76 @@ class Liker:
 
 			# run through all tags that must be searched
 			for search_tag in config.get_search_tags():
+
+				media_processed = 0
+				media_liked		= 0	
+
 				print ''
-				print 'Searching for tag: %s' % search_tag
+				print 'Searching for tag: %s ' % search_tag.get_tag_name()
+				print '========================================================================================================='
 				print ''
 
 				#  try to request media with the current tag
 				try:
-					results, next = api.tag_recent_media( count = 20, max_tag_id = '', tag_name = search_tag )
 
-					media_processed, media_liked = self.results_verifications( config = config, results = results, media_processed = media_processed, media_liked = media_liked )
-					print 'Media processed: ' + str( media_processed )		
-					print 'Media liked: ' + str( media_liked )	
-					print''	
+					next_page = ''
 
 
-					while next:
+					if search_tag.get_search_older() is True :
 
-						results, next = api.tag_recent_media( tag_name = search_tag, with_next_url = next )
-						media_processed, media_liked  = self.results_verifications( config = config, results = results, media_processed = media_processed, media_liked = media_liked  )
-						print 'Media processed: ' + str( media_processed )		
-						print 'Media liked: ' + str( media_liked )	
-						print''	
+						print 'Searching for older results'
+						print ''
+
+						results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = search_tag.get_next_page() )
+						media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )				
+					
+					else : 
+						results, next_page = api.tag_recent_media( count = 20, max_tag_id = '', tag_name = search_tag.get_tag_name() )
+						media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )	
+
+
+					while next_page and media_processed < config.get_max_iterations() :
+
+						if search_tag.get_search_older() is True :
+
+							results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = search_tag.get_next_page() )
+							media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )				
+
+						else:
+							results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = next_page )
+							media_processed, media_liked  = self.results_verifications( search_tag = search_tag, config = config, results = results, media_processed = media_processed, media_liked = media_liked )
+						
+						# print results
+						print ''
+						print "Remaining API Calls = %s/%s" % ( api.x_ratelimit_remaining, api.x_ratelimit )
+						print ''
+
+						
+
+
+						search_tag.next_page = next_page
+
+						print search_tag.next_page
+
+							
+						if media_liked == 0 :
+							search_tag.search_older = True
+							print ''
+							print 'Searching for older tags next time'
+							print ''
+
+						else :
+							search_tag.search_older = False
+
 
 
 				except Exception as e:
 					print ( e )
-			print ''
-			print "Remaining API Calls = %s/%s" % ( api.x_ratelimit_remaining, api.x_ratelimit )
-			print ''
+		
+		while True:
+			# TODO: salvar o último next_url de cada config para iniciar a próxima interação da última parada, mas isso só pode rolar se...
+			# não der nenhum like nas últimas x iterações
+			self.make_likes()
 
 
 

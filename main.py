@@ -30,13 +30,13 @@ configs = []
 user = User( client_user = client_user, client_id = client_id, access_token = access_token, client_secret = client_secret )
 
 # New config object
-config = Config( search_tags = search_tags, related_tags = related_tags, ignored_tags = None, ignored_users = ignored_users, config_user = user, max_recursions = 100 )
+config = Config( search_tags = search_tags, related_tags = related_tags, ignored_tags = ignored_tags, ignored_users = ignored_users, config_user = user, max_iterations = 300 )
 		
 # Add the new config to the configs array
 configs.append( config )
 
 # New Liker
-liker = Liker( min_interval = 120, max_interval = 143, configs = configs  )
+liker = Liker( min_interval = 130, max_interval = 143, configs = configs  )
 
 # Seat back and relax
 liker.make_likes()
