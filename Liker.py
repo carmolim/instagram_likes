@@ -44,13 +44,13 @@ class Liker:
 		time.sleep( seconds )
 
 	#
-	def results_verifications ( self, search_tag, config, results, media_processed, media_liked ) :
+	def results_verifications ( self, search_tag, config, results ) :
 	
 		# print results
 		# run through all the results
 		for result in results:
 
-			#  checks if this result has tags
+			# checks if this result has tags
 			if hasattr( result , 'tags' ):			
 				
 				# print getattr(result, 'tags', [])
@@ -68,11 +68,11 @@ class Liker:
 				has_related_tag		= False
 
 				print ''
-				print 'tag: '  + search_tag.get_tag_name()
-				print  media_tags
+				print 'tag: ' + search_tag.get_tag_name()
+				print media_tags
 				print 'user: ' + media_user
 				# print 'liked: ' + str( has_liked )
-				# print 'id: '   + str( media_id )
+				# print 'id: '  + str( media_id )
 				print 'link: ' + media_link
 				# print media_tags
 
@@ -137,7 +137,7 @@ class Liker:
 
 						print 'Starting related tags verification'
 
-						# print  config.get_related_tags()
+						# print config.get_related_tags()
 
 						# run through all tags from this media
 						for tag in media_tags :
@@ -145,8 +145,27 @@ class Liker:
 							# run through all tags from this media
 							for related_tag in config.get_related_tags():
 
+								# checks if this string starts with an * 
+								if related_tag[0] == '*':
+									# print ' - Searching for substring'
+
+									# remove the '*' from string to make the right commparison
+									related_tag = related_tag[ 1 : len( related_tag ) ]
+
+									# if the current related tag is a sub-string of the tag...
+									# convert the tag to lower case to improve comparison
+									if tag.name.lower().find( related_tag ) != -1:
+
+										has_related_tag = True
+
+										print ' - This media has the substring "%s" related tag' % related_tag 
+										# break with this break things are supossed to go faster, but I think that wont be noticeble
+
+
 								# if the current tag is listed in the related tags
-								if tag.name == related_tag :
+								# convert the tag to lower case to improve comparison
+
+								elif tag.name.lower() == related_tag :
 								
 									has_related_tag = True
 
@@ -157,7 +176,6 @@ class Liker:
 
 							self.like_media( config, media_id )
 							search_tag.likes = search_tag.likes + 1 
-							# media_liked += 1
 
 
 						if has_related_tag is not True:
@@ -169,7 +187,7 @@ class Liker:
 						self.like_media( config, media_id )
 
 						search_tag.likes = search_tag.likes + 1
-						# media_liked += 1
+					
 
 				else:
 					print "This media have already been liked, or was posted for me, or doesn't have more than 1 tag to bem compared"
@@ -178,7 +196,7 @@ class Liker:
 				print "This media doesn't have any tags"
 
 			search_tag.processed = search_tag.processed + 1
-			media_processed += 1
+			
 
 			# print 'Media processed: ' + str( media_processed )		
 			print 'Media processed: ' + str( search_tag.processed )	
@@ -187,10 +205,6 @@ class Liker:
 			print 'Media liked: ' + str( search_tag.likes )	
 
 			print ''
-
-			
-		return media_processed, media_liked
-
 
 
 	def make_likes ( self ):
@@ -217,7 +231,7 @@ class Liker:
 				print '========================================================================================================='
 				print ''
 
-				#  try to request media with the current tag
+				# try to request media with the current tag
 				# try:
 
 				next_page = ''
@@ -229,11 +243,11 @@ class Liker:
 					print ''
 
 					results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = search_tag.get_next_page() )
-					media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )				
+					self.results_verifications( search_tag = search_tag, config = config, results = results )				
 				
 				else : 
 					results, next_page = api.tag_recent_media( count = 20, max_tag_id = '', tag_name = search_tag.get_tag_name() )
-					media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )	
+					self.results_verifications( search_tag = search_tag, config = config, results = results )	
 
 
 				while next_page and media_processed < config.get_max_iterations() :
@@ -241,11 +255,11 @@ class Liker:
 					if search_tag.get_search_older() is True :
 
 						results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = search_tag.get_next_page() )
-						media_processed, media_liked = self.results_verifications( search_tag = search_tag,  config = config, results = results, media_processed = media_processed, media_liked = media_liked )				
+						self.results_verifications( search_tag = search_tag, config = config, results = results )				
 
 					else:
 						results, next_page = api.tag_recent_media( tag_name = search_tag.get_tag_name(), with_next_url = next_page )
-						media_processed, media_liked  = self.results_verifications( search_tag = search_tag, config = config, results = results, media_processed = media_processed, media_liked = media_liked )
+						self.results_verifications( search_tag = search_tag, config = config, results = results )
 					
 					# print results
 					print ''
