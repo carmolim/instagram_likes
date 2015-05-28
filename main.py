@@ -17,10 +17,10 @@ client_secret 	= 'your client_secret'
 # quotes, do not put a # sign in front of the tag
 search_tags = [ u'cat' ]
 
-# If in other to the media be liked has to have another tag, list the possiblilities her
+# If in other to the media be liked it has to have another tag, list the possiblilities here
 related_tags = [ u'blackcat', u'love', u'kitty' ]
 
-# If in other to the media be liked has to have another tag, list the possiblilities her
+# If in other to the media be liked it must not have the ignored tags bellow
 ignored_tags = [ u'pussy', ]
 
 # Media from those users won't be liked
