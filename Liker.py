@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+import datetime
 import time
 import random
-from SearchTag import SearchTag
+import langid
+
+
 
 class Liker:
 	
@@ -13,6 +16,51 @@ class Liker:
 		self.configs			= configs
 
 		print 'Liker object created'
+
+	def time_ago ( self, timestamp ):
+
+		print 'date: ' + str( timestamp )
+		timestamp = time.mktime(timestamp.timetuple())
+
+
+		
+		difference = 0.0
+
+		day = 86400 # 24 * 60 * 60
+		hour = 360 #60 * 60 
+		now = int( time.time() )
+		difference = now - timestamp
+		# print 'timestamp: ' + str( timestamp )
+		# print 'now: ' + str( now )
+		# print 'difference: ' + str( difference )
+		
+
+		if difference >= day :
+
+			days_ago  = difference / day
+
+			if days_ago > 1 :
+				return '%s days ago' % str( days_ago )
+
+			else:
+				return '1 day ago'
+
+
+		else: 
+
+			hours_ago = difference / hour
+
+			if hours_ago > 1 :
+				return '%s hours ago' % str( hours_ago )
+
+			else:
+				return '%s hour ago' % str( hours_ago )
+
+
+
+		# difeference = now time stamp - timestamp
+		# if difference > 1 day
+
 
 	def str_to_boolean( self, s ):
 
@@ -43,6 +91,15 @@ class Liker:
 		# Waits random time
 		time.sleep( seconds )
 
+
+	def user_info ( self, config, user_id ) :
+
+		api = config.get_api() 
+
+		user_info = api.user( user_id )
+
+		return user_info 
+
 	#
 	def results_verifications ( self, search_tag, config, results ) :
 	
@@ -59,7 +116,17 @@ class Liker:
 				media_id 			= result.id
 				media_tags 			= result.tags
 				media_user 			= str( result.user.username )
+				media_user_id		= result.user.id 
 				media_link			= result.link
+				media_created		= result.created_time
+				media_description	= result.caption.text
+
+				print media_description
+
+				lang = langid.classify( media_description )
+
+				print lang
+
 
 				is_from_client		= False
 				has_liked 			= self.str_to_boolean( result.user_has_liked )
@@ -71,6 +138,9 @@ class Liker:
 				print 'tag: ' + search_tag.get_tag_name()
 				print media_tags
 				print 'user: ' + media_user
+				# print 'when: ' + self.time_ago( media_created )
+				print 'when: ' + str( media_created )
+
 				# print 'liked: ' + str( has_liked )
 				# print 'id: '  + str( media_id )
 				print 'link: ' + media_link
@@ -98,8 +168,24 @@ class Liker:
 						# run through all excluded users listed in the config
 						for ignored_user in config.get_ignored_users():
 
+							# checks if this string starts with an * 
+							if ignored_user[0] == '*':
+								# print ' - Searching for substring'
+
+								# remove the '*' from string to make the right commparison
+								ignored_user = ignored_user[ 1 : len( ignored_user ) ]
+
+								# if the current related tag is a sub-string of the tag...
+								# convert the tag to lower case to improve comparison
+								if media_user.lower().find( ignored_user ) != -1:
+
+									has_ignored_user = True
+
+									print ' - This user has the substring "%s"' % ( ignored_user )
+									#break # with this break things are supossed to go faster, but I think that wont be noticeble
+
 							# if this media was posted by some excluded user
-							if media_user == ignored_user:
+							elif media_user == ignored_user:
 
 								# has_ignored_user is set to true
 								has_ignored_user = True
@@ -121,8 +207,24 @@ class Liker:
 							# run through all related tags from this config
 							for ignored_tag in config.get_ignored_tags():
 
+								# checks if this string starts with an * 
+								if ignored_tag[0] == '*':
+									# print ' - Searching for substring'
+
+									# remove the '*' from string to make the right commparison
+									ignored_tag = ignored_tag[ 1 : len( ignored_tag ) ]
+
+									# if the current related tag is a sub-string of the tag...
+									# convert the tag to lower case to improve comparison
+									if tag.name.lower().find( ignored_tag ) != -1:
+
+										has_ignored_tag = True
+
+										print ' - This media has the substring "%s" in the tag: "%s" ' % ( ignored_tag, tag.name )
+										#break # with this break things are supossed to go faster, but I think that wont be noticeble
+
 								# if the current tag is listed in the ignored tags
-								if tag.name == ignored_tag:
+								elif tag.name == ignored_tag:
 
 									# has_ignored_tag is set to true
 									has_ignored_tag = True
@@ -145,6 +247,8 @@ class Liker:
 							# run through all tags from this media
 							for related_tag in config.get_related_tags():
 
+
+
 								# checks if this string starts with an * 
 								if related_tag[0] == '*':
 									# print ' - Searching for substring'
@@ -158,8 +262,8 @@ class Liker:
 
 										has_related_tag = True
 
-										print ' - This media has the substring "%s" related tag' % related_tag 
-										# break with this break things are supossed to go faster, but I think that wont be noticeble
+										print ' - This media has the substring "%s" in the tag: "%s" ' % ( related_tag, tag.name )
+										#break # with this break things are supossed to go faster, but I think that wont be noticeble
 
 
 								# if the current tag is listed in the related tags
@@ -174,9 +278,12 @@ class Liker:
 						
 						if has_related_tag is True:
 
+							media_user_info = self.user_info( config, media_user_id )
+							user_followers = media_user_info.counts['followed_by']
+							print 'user followers: ' + str( user_followers )
+
 							self.like_media( config, media_id )
 							search_tag.likes = search_tag.likes + 1 
-
 
 						if has_related_tag is not True:
 							print ' - No related tag found'
@@ -190,18 +297,17 @@ class Liker:
 					
 
 				else:
-					print "This media have already been liked, or was posted for me, or doesn't have more than 1 tag to bem compared"
+					print "This media have already been liked, or was posted by me, or doesn't have more than 1 tag to bem compared"
 
 			else:
 				print "This media doesn't have any tags"
 
+
 			search_tag.processed = search_tag.processed + 1
 			
 
-			# print 'Media processed: ' + str( media_processed )		
 			print 'Media processed: ' + str( search_tag.processed )	
 
-			# print 'Media liked: ' + str( media_liked )	
 			print 'Media liked: ' + str( search_tag.likes )	
 
 			print ''
@@ -223,9 +329,6 @@ class Liker:
 			# run through all tags that must be searched
 			for search_tag in config.get_search_tags():
 
-				media_processed = 0
-				media_liked		= 0	
-
 				print ''
 				print 'Searching for tag: %s ' % search_tag.get_tag_name()
 				print '========================================================================================================='
@@ -236,7 +339,6 @@ class Liker:
 
 				next_page = ''
 
-
 				if search_tag.get_search_older() is True :
 
 					print 'Searching for older results'
@@ -246,11 +348,12 @@ class Liker:
 					self.results_verifications( search_tag = search_tag, config = config, results = results )				
 				
 				else : 
+
 					results, next_page = api.tag_recent_media( count = 20, max_tag_id = '', tag_name = search_tag.get_tag_name() )
 					self.results_verifications( search_tag = search_tag, config = config, results = results )	
 
 
-				while next_page and media_processed < config.get_max_iterations() :
+				while next_page and search_tag.processed < config.get_max_iterations() :
 
 					if search_tag.get_search_older() is True :
 
@@ -266,16 +369,19 @@ class Liker:
 					print "Remaining API Calls = %s/%s" % ( api.x_ratelimit_remaining, api.x_ratelimit )
 					print ''
 
-					
-
-
 					search_tag.next_page = next_page
 
 					print search_tag.next_page
 
 						
-					if media_liked == 0 :
+					if search_tag.processed == config.get_max_iterations() and search_tag.likes == 0:
+
+
 						search_tag.search_older = True
+
+						# reset the max iterations to search for older posts
+						config.max_iterations = 0
+						
 						print ''
 						print 'Searching for older tags next time'
 						print ''
@@ -283,14 +389,10 @@ class Liker:
 					else :
 						search_tag.search_older = False
 
-
-
 				# except Exception as e:
 				# 	print ( e )
 		
 		while True:
-			# TODO: salvar o último next_url de cada config para iniciar a próxima interação da última parada, mas isso só pode rolar se...
-			# não der nenhum like nas últimas x iterações
 			self.make_likes()
 
 
