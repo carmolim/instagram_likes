@@ -13,3 +13,10 @@ Step 2
 Install the python instagram library 
 
 sudo pip install python-instagram
+
+
+Startin to work with the lang.py library for language identification
+
+Install the lang.py library:
+
+sudo pip install langid
