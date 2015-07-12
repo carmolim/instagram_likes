@@ -6,17 +6,21 @@ from SearchTag import SearchTag
 
 class Config:
 
-	def __init__( self, search_tags, related_tags, ignored_tags, ignored_users, config_user, max_iterations ):
+	def __init__( self, search_tags, langs, related_tags, ignored_tags, ignored_users, config_user, max_iterations ):
 
 		#TODO: how deep in old search it should go
 
 		self.search_tags 			= []
+		self.langs					= None
 		self.related_tags 			= None
 		self.ignored_users 			= None
 		self.ignored_tags 			= None
 		self.config_user 			= config_user
 		self.max_iterations			= max_iterations
 		self.api 					= None
+
+		if langs is not None:
+			self.langs = langs
 
 		if related_tags is not None:
 			self.related_tags = related_tags
@@ -46,6 +50,9 @@ class Config:
 
 	def get_search_tags ( self ):
 		return self.search_tags
+
+	def get_langs ( self ):
+		return self.langs 
 
 	def get_related_tags ( self ):
 		return self.related_tags

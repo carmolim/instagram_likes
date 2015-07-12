@@ -81,6 +81,8 @@ class Liker:
 	def like_media ( self, config, media_id ):
 
 		api = config.get_api() 
+
+		# try to like, sometimes I get a 429 api return (too many api requests), need to wait before do the like
 		api.like_media( media_id = media_id )
 
 		seconds = random.randint( self.min_interval, self.max_interval ) # sorteia o tempo para a proxima acao
@@ -98,7 +100,27 @@ class Liker:
 
 		user_info = api.user( user_id )
 
-		return user_info 
+		return user_info
+
+
+	# checks if the passed text is from the language specified in the config object
+	def media_lang ( self, config, text ):
+
+		# find in wich language the text is written
+		language = langid.classify( text )
+
+		print language
+
+		# runs through the listed langs in the config langs 
+		for lang in config.get_langs() : 
+
+			# checks if the resulted languangage is listed in the langs from config
+			if lang == language[0] :
+				
+				# adds this threshold to the config
+				if language[1] >= .8:
+					
+					return True
 
 	#
 	def results_verifications ( self, search_tag, config, results ) :
@@ -119,20 +141,12 @@ class Liker:
 				media_user_id		= result.user.id 
 				media_link			= result.link
 				media_created		= result.created_time
-				media_description	= result.caption.text
-
-				print media_description
-
-				lang = langid.classify( media_description )
-
-				print lang
-
-
 				is_from_client		= False
 				has_liked 			= self.str_to_boolean( result.user_has_liked )
 				has_ignored_user 	= False
 				has_ignored_tag 	= False
 				has_related_tag		= False
+				is_correct_lang		= False
 
 				print ''
 				print 'tag: ' + search_tag.get_tag_name()
@@ -147,9 +161,6 @@ class Liker:
 				# print media_tags
 
 				#TODO: try to find the related tags in the media description
-
-				#TODO: translate se ainda nao dei like nessa foto e nao foi postada por mim e tiver se tiver alguma tagRelacionada para verificar
-				# failed verification of the user... make some tests
 				
 				if media_user == config.get_config_user().get_client_user():
 					# print 'is from client'
@@ -159,6 +170,7 @@ class Liker:
 					# print 'isnt from client'
 					is_from_client = False
 
+				# if this media is not form this client, and haven't been liked yet, and there is more than 1 #hashtag...
 				if is_from_client is False and has_liked is False and len( media_tags ) > 1 :
 
 					# if the config has a list of ignored users
@@ -234,8 +246,25 @@ class Liker:
 						if has_ignored_tag is False:
 							print ' - No ignored tag found'
 
-					# if this media has not a excluded user and if this media has not a excluded user and the config has a list of related tags
-					if has_ignored_user is False and has_ignored_tag is False and config.get_related_tags() is not None :
+
+					# if this media has not a excluded user and if this media has not a ignored tag and the config has a list of languages, and the media has a description
+					if has_ignored_user is False and has_ignored_tag is False and config.get_langs() is not None and hasattr( result.caption, 'text' ) :
+
+						media_description = result.caption.text
+							
+						print 'caption: ' + media_description
+							
+						is_correct_lang = self.media_lang( config, media_description )
+
+						if is_correct_lang:
+							print 'media is from correct language'
+
+						else:
+							print 'media isnt from correct language'
+
+						
+					# if this media has not a excluded user and if this media has not a ignored tag and the config has a list of related tags
+					if has_ignored_user is False and has_ignored_tag is False and config.get_related_tags() is not None and is_correct_lang is True:
 
 						print 'Starting related tags verification'
 
@@ -246,8 +275,6 @@ class Liker:
 
 							# run through all tags from this media
 							for related_tag in config.get_related_tags():
-
-
 
 								# checks if this string starts with an * 
 								if related_tag[0] == '*':
@@ -289,7 +316,7 @@ class Liker:
 							print ' - No related tag found'
 
 					# if no related tag is defined, like all the media that has the current SearchTag and pass all other verifications
-					elif has_ignored_user is False and has_ignored_tag is False:
+					elif has_ignored_user is False and has_ignored_tag is False and is_correct_lang is True:
 
 						self.like_media( config, media_id )
 
