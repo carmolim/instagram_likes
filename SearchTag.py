@@ -31,7 +31,6 @@ class SearchTag:
 
 
 
-
 	def get_tag_name ( self ):
 		return self.search_tag
 
