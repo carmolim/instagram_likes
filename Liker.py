@@ -263,45 +263,46 @@ class Liker:
 							print 'media isnt from correct language'
 
 						
-					# if this media has not a excluded user and if this media has not a ignored tag and the config has a list of related tags
-					if has_ignored_user is False and has_ignored_tag is False and config.get_related_tags() is not None and is_correct_lang is True:
+					# if this media has not an excluded user and if this media has not a ignored tag and the config has a list of related tags
+					if has_ignored_user is False and has_ignored_tag is False and config.get_related_tags() is not None :
 
 						print 'Starting related tags verification'
 
-						# print config.get_related_tags()
-
-						# run through all tags from this media
-						for tag in media_tags :
+						if is_correct_lang is True or config.get_langs() is None:
+							
+							# print config.get_related_tags()
 
 							# run through all tags from this media
-							for related_tag in config.get_related_tags():
+							for tag in media_tags :
 
-								# checks if this string starts with an * 
-								if related_tag[0] == '*':
-									# print ' - Searching for substring'
+								# run through all tags from this media
+								for related_tag in config.get_related_tags():
 
-									# remove the '*' from string to make the right commparison
-									related_tag = related_tag[ 1 : len( related_tag ) ]
+									# checks if this string starts with an * 
+									if related_tag[0] == '*':
+										# print ' - Searching for substring'
 
-									# if the current related tag is a sub-string of the tag...
+										# remove the '*' from string to make the right commparison
+										related_tag = related_tag[ 1 : len( related_tag ) ]
+
+										# if the current related tag is a sub-string of the tag...
+										# convert the tag to lower case to improve comparison
+										if tag.name.lower().find( related_tag ) != -1:
+
+											has_related_tag = True
+
+											print ' - This media has the substring "%s" in the tag: "%s" ' % ( related_tag, tag.name )
+											#break # with this break things are supossed to go faster, but I think that wont be noticeble
+
+									# if the current tag is listed in the related tags
 									# convert the tag to lower case to improve comparison
-									if tag.name.lower().find( related_tag ) != -1:
 
+									elif tag.name.lower() == related_tag :
+									
 										has_related_tag = True
 
-										print ' - This media has the substring "%s" in the tag: "%s" ' % ( related_tag, tag.name )
-										#break # with this break things are supossed to go faster, but I think that wont be noticeble
-
-
-								# if the current tag is listed in the related tags
-								# convert the tag to lower case to improve comparison
-
-								elif tag.name.lower() == related_tag :
-								
-									has_related_tag = True
-
-									print ' - This media has the "%s" related tag' % related_tag 
-									# break with this break things are supossed to go faster, but I think that wont be noticeble
+										print ' - This media has the "%s" related tag' % related_tag 
+										# break with this break things are supossed to go faster, but I think that wont be noticeble
 						
 						if has_related_tag is True:
 
@@ -316,11 +317,13 @@ class Liker:
 							print ' - No related tag found'
 
 					# if no related tag is defined, like all the media that has the current SearchTag and pass all other verifications
-					elif has_ignored_user is False and has_ignored_tag is False and is_correct_lang is True:
+					elif has_ignored_user is False and has_ignored_tag is False :
 
-						self.like_media( config, media_id )
+						if  is_correct_lang is True or config.get_langs() is None:
+							
+							self.like_media( config, media_id )
 
-						search_tag.likes = search_tag.likes + 1
+							search_tag.likes = search_tag.likes + 1
 					
 
 				else:
